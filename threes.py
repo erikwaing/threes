@@ -174,7 +174,7 @@ class Board:
 		self.board[square] = nextColor
 
 	def insertNewElement(self, MoveMade, nextColor):
-		openSpaces = None
+		openSpaces = []
 		if MoveMade == 'Up' or MoveMade == 'Down':
 			openSpaces = self.getAvailableSpacesForNextTimeOnUpDown(MoveMade)
 		elif MoveMade == 'Left' or MoveMade == 'Right':
@@ -426,11 +426,83 @@ class RandomPlayer:
 		else:
 			return True
 
+class Player:
+
+	def __init__(self, numLookAheads, evaluator):
+		self.numLookAheads = numLookAheads
+		self.evaluator = evaluator
+		self.sequences = self.allSequencesOfLength(numLookAheads)
+
+	def allSequencesOfLength(self, n):
+		if n == 1:
+			return [['Left'], ['Right'], ['Up'], ['Down']]
+		else:
+			toAdd = ['Left', 'Right', 'Up', 'Down']
+			sequences = []
+			previous = self.allSequencesOfLength(n-1)
+			for next in toAdd:
+				for after in previous:
+					current = copy.deepcopy(after)
+					current.append(next)
+					sequences.append(current)
+			return sequences
+
+	def requestMove(self, Board, nextColor):
+		maxscore = 0
+		maxMove = 'Left'
+		for moves in self.sequences:
+			tempBoard = copy.deepcopy(Board)
+			for move in moves:
+				if self.canMove(tempBoard, move):
+					tempBoard.executeMove(move)
+					tempBoard.insertNewElement(move, nextColor)
+					nextColor = random.randint(1,3)
+				else:
+					break
+			boardScore = self.evaluator.evalBoard(tempBoard)
+			if boardScore > maxscore:
+				maxscore = boardScore
+				maxMove = moves[0]
+		return maxMove
+
+	def canMove(self, game, move):
+		simgame = Board(game.rows, game.cols, self)
+		simgame.board = copy.deepcopy(game.board)
+		simgame.executeMove(move)
+		simgame.insertNewElement(move, 1)
+		if sum(simgame.board.values()) == sum(game.board.values()):
+			return False
+		else:
+			return True
+
+class BoardEvaluator:
+
+	def evalBoard(self, Board):
+		score = 0
+		for val in Board.board.values():
+			score += val*val
+		return score
+
+
 test = BoardTests()
 test.runAllTests()
 
-player = RandomPlayer()
+evaluator = BoardEvaluator()
+player = Player(3, evaluator)
 game = Board(4,4,player)
-while raw_input() == '':
-	print "Number of Plays: %d" % game.play()[0]
-	game.reset() 
+
+playerRand = RandomPlayer()
+game2 = Board(4, 4, playerRand)
+scorePlan = 0
+scoreRand = 0
+for i in range(50):
+	if i%10 == 0:
+		print "Played %d Games ..." % i
+	plan = game.play()
+	scorePlan += plan[1]
+	rand = game2.play()
+	scoreRand += rand[1]
+	game2.reset()
+	game.reset()
+print "Planner Average Score: %d" % (scorePlan/50)
+print "Random Average Score: %d" % (scoreRand/50)

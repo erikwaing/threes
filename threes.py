@@ -193,7 +193,17 @@ class Board:
 		while self.hasAvailableMove():
 			counter+=1
 			self.move()
-		return (counter, sum(self.board.values()))
+		return (counter, self.score())
+
+	def score(self):
+		score = 0
+		for value in self.board.values():
+			if value == 1 or value == 2 or value == 0:
+				score += value
+			else:
+				score += math.pow(3, math.log(value/3, 2)+1)
+		return score
+
 
 class BoardTests:
 
@@ -538,7 +548,7 @@ class ClosenessOfValues:
 
 	def evalBoard(self, Board):
 		score = 0
-		directions = [(1, 0), (0, 1), (0, -1), (-1, 0)]
+		directions = [(1, 0), (0, 1)]
 		for pos in Board.board.keys():
 			(x, y) = pos
 			closestValue = float('inf')

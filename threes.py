@@ -499,6 +499,13 @@ class SumOfSquares:
 			score += val*val
 		return score
 
+class SumOfCubes:
+	def evalBoard(self, Board):
+		score = 0
+		for val in Board.board.values():
+			score += val**3
+		return score
+
 class EmptySquares:
 
 	def evalBoard(self, Board):
@@ -587,4 +594,4 @@ class StrategyTester:
 test = BoardTests()
 test.runAllTests()
 
-StrategyTester.testEvaluators([SumOfSquares(), EmptySquares(), MinOneTwo(), PositionOfHighest(), ClosenessOfValues()], 2, 10)
+StrategyTester.testEvaluators([SumOfSquares(), SumOfCubes(), EmptySquares(), MinOneTwo(), PositionOfHighest(), ClosenessOfValues()], 2, 10)

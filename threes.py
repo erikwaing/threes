@@ -506,6 +506,21 @@ class SumOfCubes:
 			score += val**3
 		return score
 
+class SumOfBottom:
+	def evalBoard(self,Board):
+		score = 0
+		for key in Board.board.keys():
+			if key[1] == Board.rows - 1:
+				score += Board.board[key]
+		return score
+
+class Gravity:
+	def evalBoard(self,Board):
+		score = 0
+		for key in Board.board.keys():
+			score += -1*key[1]*Board.board[key]
+		return score
+
 class EmptySquares:
 
 	def evalBoard(self, Board):

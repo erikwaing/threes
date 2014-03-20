@@ -594,7 +594,7 @@ class CombinedEvaluators:
 		self.listOfCoefficients = listOfCoefficients
 
 	def evalBoard(self, Board):
-		scores = [evaluator*self.listOfCoefficients[i] for i,evaluator in enumerate(self.listOfEvaluators)]
+		scores = [evaluator.evalBoard(Board)*self.listOfCoefficients[i] for i,evaluator in enumerate(self.listOfEvaluators)]
 		return sum(scores)
 
 class StrategyTester:
@@ -604,8 +604,8 @@ class StrategyTester:
 		print "Testing Evaluators..."
 		print "Number of Look Aheads: %d" % numLookAheads
 		print "Number of Games: %d" % numGames
-		for evaluator in listOfEvaluators:
-			print "Testing Evaluator: " + str(evaluator)
+		for k, evaluator in enumerate(listOfEvaluators):
+			print "Testing Evaluator %d: %s" % (k, str(evaluator))
 			player = Player(numLookAheads, evaluator)
 			game = Board(4,4,player)
 			totalScore = 0
@@ -626,4 +626,6 @@ class StrategyTester:
 test = BoardTests()
 test.runAllTests()
 
-StrategyTester.testEvaluators([MaximizeScore(), SumOfSquares(), SumOfCubes(), Gravity(), SumOfBottom(), EmptySquares(), MinOneTwo(), PositionOfHighest(), ClosenessOfValues()], 2, 10)
+StrategyTester.testEvaluators([MaximizeScore(), SumOfSquares(), SumOfCubes(), Gravity(), SumOfBottom(), EmptySquares(), MinOneTwo(), PositionOfHighest(), ClosenessOfValues()], 2, 100)
+#searchForCombination = [CombinedEvaluators([MaximizeScore(), EmptySquares()], [1, i]) for i in range(1, 10000, 1000)]
+#StrategyTester.testEvaluators([MaximizeScore()] + searchForCombination, 2, 30)

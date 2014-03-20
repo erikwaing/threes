@@ -587,9 +587,14 @@ class ClosenessOfValues:
 			score -= closestValue
 		return score
 
-class CombinedEvaluators(listOfEvaluators, listOfCoefficients):
+class CombinedEvaluators:
+	
+	def __init__(self, listOfEvaluators, listOfCoefficients):
+		self.listOfEvaluators = listOfEvaluators
+		self.listOfCoefficients = listOfCoefficients
+
 	def evalBoard(self, Board):
-		scores = [evaluator*listOfCoefficients[i] for i,evaluator in enumerate(listOfEvaluators)]
+		scores = [evaluator*self.listOfCoefficients[i] for i,evaluator in enumerate(self.listOfEvaluators)]
 		return sum(scores)
 
 class StrategyTester:
@@ -621,4 +626,4 @@ class StrategyTester:
 test = BoardTests()
 test.runAllTests()
 
-StrategyTester.testEvaluators([MaximizeScore(), SumOfSquares(), SumOfCubes(), EmptySquares(), MinOneTwo(), PositionOfHighest(), ClosenessOfValues()], 2, 10)
+StrategyTester.testEvaluators([MaximizeScore(), SumOfSquares(), SumOfCubes(), Gravity(), SumOfBottom(), EmptySquares(), MinOneTwo(), PositionOfHighest(), ClosenessOfValues()], 2, 10)

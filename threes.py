@@ -448,6 +448,7 @@ class Player:
 			return sequences
 
 	def requestMove(self, Board, nextColor):
+		possibleMoves = ['Left', 'Right', 'Up', 'Down']
 		maxscore = 0
 		maxMove = 'Left'
 		for moves in self.sequences:
@@ -463,7 +464,12 @@ class Player:
 			if boardScore > maxscore:
 				maxscore = boardScore
 				maxMove = moves[0]
-		return maxMove
+		if self.canMove(Board, maxMove):
+			return maxMove
+		else:
+			for i in possibleMoves:
+				if self.canMove(Board,i):
+					return i
 
 	def canMove(self, game, move):
 		simgame = Board(game.rows, game.cols, self)
@@ -475,7 +481,7 @@ class Player:
 		else:
 			return True
 
-class BoardEvaluator:
+class SumOfSquares:
 
 	def evalBoard(self, Board):
 		score = 0
@@ -483,25 +489,48 @@ class BoardEvaluator:
 			score += val*val
 		return score
 
+class EmptySquares:
+
+	def evalBoard(self, Board):
+		score = 0
+		for val in Board.board.values():
+			if val == 0:
+				score += 1
+		return score
+
+class MinOneTwo:
+
+	def evalBoard(self, Board):
+		score = 0
+		for val in Board.board.values():
+			if val != 1 and val != 2:
+				score += 1
+		return score
+
+class StrategyTester:
+
+	@staticmethod
+	def testEvaluators(listOfEvaluators, numLookAheads, numGames):
+		for evaluator in listOfEvaluators:
+			print "Testing Evaluator: " + str(evaluator)
+			player = Player(numLookAheads, evaluator)
+			game = Board(4,4,player)
+			totalScore = 0
+			maxScore = 0
+			minScore = float('inf')
+			for i in range(numGames):
+				score = game.play()[1]
+				game.reset()
+				totalScore += score
+				if score > maxScore:
+					maxScore = score
+				if score < minScore:
+					minScore = score
+			print "Average Score: %d" % (totalScore / numGames)
+			print "Max Score: %d" % maxScore
+			print "Min Score: %d" % minScore
+
 test = BoardTests()
 test.runAllTests()
 
-evaluator = BoardEvaluator()
-player = Player(3, evaluator)
-game = Board(4,4,player)
-
-playerRand = RandomPlayer()
-game2 = Board(4, 4, playerRand)
-scorePlan = 0
-scoreRand = 0
-for i in range(50):
-	if i%10 == 0:
-		print "Played %d Games ..." % i
-	plan = game.play()
-	scorePlan += plan[1]
-	rand = game2.play()
-	scoreRand += rand[1]
-	game2.reset()
-	game.reset()
-print "Planner Average Score: %d" % (scorePlan/50)
-print "Random Average Score: %d" % (scoreRand/50)
+StrategyTester.testEvaluators([SumOfSquares(), EmptySquares(), MinOneTwo()], 3, 10)

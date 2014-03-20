@@ -507,6 +507,50 @@ class MinOneTwo:
 				score += 1
 		return score
 
+class PositionOfHighest:
+
+	def evalBoard(self, Board):
+		# only valid in 4 by 4
+		valuesToSum = { (1, 1): 0,
+						(1, 2): 0,
+						(2, 1): 0,
+						(2, 2): 0,
+						(0, 0): 2,
+						(3, 3): 2,
+						(3, 0): 2,
+						(0, 3): 2,
+						(3, 1): 1,
+						(1, 3): 1,
+						(3, 2): 1,
+						(2, 3): 1,
+						(0, 1): 1,
+						(0, 2): 1,
+						(1, 0): 1,
+						(2, 0): 1}
+		maxLoc = None
+		maxValue = max(Board.board.values())
+		for key in Board.board.keys():
+			if Board.board[key] == maxValue:
+				maxLoc = key
+		return valuesToSum[maxLoc]
+
+class ClosenessOfValues:
+
+	def evalBoard(self, Board):
+		score = 0
+		directions = [(1, 0), (0, 1), (0, -1), (-1, 0)]
+		for pos in Board.board.keys():
+			(x, y) = pos
+			closestValue = float('inf')
+			for d in directions:
+				(a, b) = (x + d[0], y + d[1])
+				if (a,b) in Board.board.keys() and Board.board[(a,b)]*Board.board[(x,y)] != 0:
+					difference = abs(Board.board[(a,b)] - Board.board[(x,y)])
+					if difference < closestValue:
+						closestValue = difference
+			score -= closestValue
+		return score
+
 class StrategyTester:
 
 	@staticmethod
@@ -533,4 +577,4 @@ class StrategyTester:
 test = BoardTests()
 test.runAllTests()
 
-StrategyTester.testEvaluators([SumOfSquares(), EmptySquares(), MinOneTwo()], 3, 10)
+StrategyTester.testEvaluators([SumOfSquares(), EmptySquares(), MinOneTwo(), PositionOfHighest(), ClosenessOfValues()], 2, 10)

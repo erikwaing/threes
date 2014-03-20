@@ -483,7 +483,6 @@ class BoardEvaluator:
 			score += val*val
 		return score
 
-
 test = BoardTests()
 test.runAllTests()
 

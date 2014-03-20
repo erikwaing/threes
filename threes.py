@@ -204,7 +204,6 @@ class Board:
 				score += math.pow(3, math.log(value/3, 2)+1)
 		return score
 
-
 class BoardTests:
 
 	def __init__(self):
@@ -506,6 +505,11 @@ class SumOfCubes:
 			score += val**3
 		return score
 
+class MaximizeScore:
+	
+	def evalBoard(self, Board):
+		return Board.score()
+
 class EmptySquares:
 
 	def evalBoard(self, Board):
@@ -568,10 +572,18 @@ class ClosenessOfValues:
 			score -= closestValue
 		return score
 
+class CombinedEvaluators(listOfEvaluators, listOfCoefficients):
+	def evalBoard(self, Board):
+		scores = [evaluator*listOfCoefficients[i] for i,evaluator in enumerate(listOfEvaluators)]
+		return sum(scores)
+
 class StrategyTester:
 
 	@staticmethod
 	def testEvaluators(listOfEvaluators, numLookAheads, numGames):
+		print "Testing Evaluators..."
+		print "Number of Look Aheads: %d" % numLookAheads
+		print "Number of Games: %d" % numGames
 		for evaluator in listOfEvaluators:
 			print "Testing Evaluator: " + str(evaluator)
 			player = Player(numLookAheads, evaluator)
@@ -594,4 +606,4 @@ class StrategyTester:
 test = BoardTests()
 test.runAllTests()
 
-StrategyTester.testEvaluators([SumOfSquares(), SumOfCubes(), EmptySquares(), MinOneTwo(), PositionOfHighest(), ClosenessOfValues()], 2, 10)
+StrategyTester.testEvaluators([MaximizeScore(), SumOfSquares(), SumOfCubes(), EmptySquares(), MinOneTwo(), PositionOfHighest(), ClosenessOfValues()], 2, 10)

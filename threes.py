@@ -456,12 +456,13 @@ class Player:
 					sequences.append(current)
 			return sequences
 
-	def requestMove(self, Board, nextColor):
+	def requestMove(self, game, nextColor):
 		possibleMoves = ['Left', 'Right', 'Up', 'Down']
 		maxscore = 0
 		maxMove = 'Left'
+		tempBoard = Board(game.rows, game.cols, None)
 		for moves in self.sequences:
-			tempBoard = copy.deepcopy(Board)
+			tempBoard.board = copy.deepcopy(game.board)
 			for move in moves:
 				if self.canMove(tempBoard, move):
 					tempBoard.executeMove(move)
@@ -473,11 +474,11 @@ class Player:
 			if boardScore > maxscore:
 				maxscore = boardScore
 				maxMove = moves[0]
-		if self.canMove(Board, maxMove):
+		if self.canMove(game, maxMove):
 			return maxMove
 		else:
 			for i in possibleMoves:
-				if self.canMove(Board,i):
+				if self.canMove(game,i):
 					return i
 
 	def canMove(self, game, move):
@@ -597,6 +598,14 @@ class CombinedEvaluators:
 		scores = [evaluator.evalBoard(Board)*self.listOfCoefficients[i] for i,evaluator in enumerate(self.listOfEvaluators)]
 		return sum(scores)
 
+	@staticmethod
+	def generateRandom():
+		evaluators = [MaximizeScore(), SumOfSquares(), SumOfCubes(), Gravity(), SumOfBottom(), EmptySquares(), MinOneTwo(), PositionOfHighest(), ClosenessOfValues()]
+		coef = [random.random() for i in evaluators]
+		total = sum(coef)
+		coef = [value / total for value in coef]
+		return CombinedEvaluators(evaluators, coef)
+
 class StrategyTester:
 
 	@staticmethod
@@ -623,9 +632,86 @@ class StrategyTester:
 			print "Max Score: %d" % maxScore
 			print "Min Score: %d" % minScore
 
+class GeneticAlgorithm:
+
+	def __init__(self, numOfGames, numLookAheads, branchingFactor, numOfKeeps):
+		self.numOfGames = numOfGames
+		self.numLookAheads = numLookAheads
+		self.currentBest = [CombinedEvaluators.generateRandom() for i in range(numOfKeeps)]
+		self.currentCost = []
+		self.branchingFactor = branchingFactor
+		self.numOfKeeps = numOfKeeps
+
+	def cost(self, evaluator):
+		player = Player(self.numLookAheads, evaluator)
+		game = Board(4,4,player)
+		totalScore = 0
+		maxScore = 0
+		minScore = float('inf')
+		for i in range(self.numOfGames):
+			score = game.play()[1]
+			if score > maxScore:
+				maxScore = score
+			if score < minScore:
+				minScore = score
+			totalScore += game.play()[1]
+			game.reset()
+		return -totalScore / self.numOfGames - maxScore - minScore
+
+	def mutate(self, evaluator):
+		newevaluators = [evaluator]
+		coef = evaluator.listOfCoefficients
+		for i in range(self.branchingFactor):
+			newcoef = []
+			for value in coef:
+				newcoef.append(value + random.random()/10)
+			total = sum(newcoef)
+			newcoef = [value/total for value in newcoef]
+			newevaluators.append(CombinedEvaluators(evaluator.listOfEvaluators, newcoef))
+		return newevaluators
+
+	def maintainBest(self):
+		best = []
+		cost = []
+		for i in range(self.numOfKeeps):
+			minIndex = self.currentCost.index(min(self.currentCost))
+			cost.append(self.currentCost.pop(minIndex))
+			best.append(self.currentBest.pop(minIndex))
+		self.currentBest = best
+		self.currentCost = cost
+
+	def computeCosts(self):
+		costs = []
+		for evaluator in self.currentBest:
+			costs.append(self.cost(evaluator))
+		self.currentCost = costs
+
+	def branchEvaluators(self):
+		newlist = []
+		for evaluator in self.currentBest:
+			newlist = newlist + self.mutate(evaluator)
+		self.currentBest = newlist
+
+	def runIter(self):
+		self.branchEvaluators()
+		self.computeCosts()
+		self.maintainBest()
+		currentBestStrategy = self.currentBest[self.currentCost.index(min(self.currentCost))]
+		return currentBestStrategy
+
+	def runForeverWithUpdates(self):
+		print "Running Genetic Algorithm (numOfGames=%d, numLookAheads=%d, branchingFactor=%d, numOfKeeps=%d)" % (self.numOfGames, self.numLookAheads, self.branchingFactor, self.numOfKeeps) 
+		counter = 1
+		while True:
+			best = self.runIter()
+			print "Current Best After %d Iterations: " % counter
+			print "Evaluators: " + str(best.listOfEvaluators)
+			print "Coefficients: " + str(best.listOfCoefficients)
+			print "Score: %d" % (-self.currentCost[self.currentBest.index(best)])
+			counter += 1
+
 test = BoardTests()
 test.runAllTests()
 
-StrategyTester.testEvaluators([MaximizeScore(), SumOfSquares(), SumOfCubes(), Gravity(), SumOfBottom(), EmptySquares(), MinOneTwo(), PositionOfHighest(), ClosenessOfValues()], 2, 100)
-#searchForCombination = [CombinedEvaluators([MaximizeScore(), EmptySquares()], [1, i]) for i in range(1, 10000, 1000)]
-#StrategyTester.testEvaluators([MaximizeScore()] + searchForCombination, 2, 30)
+ga = GeneticAlgorithm(10, 2, 5, 5)
+ga.runForeverWithUpdates()

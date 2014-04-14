@@ -1,6 +1,9 @@
 import random
 import copy
 import math
+import numpy
+from matplotlib import pyplot
+import time
 
 class Board:
 
@@ -458,7 +461,7 @@ class Player:
 
 	def requestMove(self, game, nextColor):
 		possibleMoves = ['Left', 'Right', 'Up', 'Down']
-		maxscore = 0
+		maxscore = -float('inf')
 		maxMove = 'Left'
 		tempBoard = Board(game.rows, game.cols, None)
 		for moves in self.sequences:
@@ -480,6 +483,98 @@ class Player:
 			for i in possibleMoves:
 				if self.canMove(game,i):
 					return i
+
+	def canMove(self, game, move):
+		simgame = Board(game.rows, game.cols, self)
+		simgame.board = copy.deepcopy(game.board)
+		simgame.executeMove(move)
+		simgame.insertNewElement(move, 1)
+		if sum(simgame.board.values()) == sum(game.board.values()):
+			return False
+		else:
+			return True
+
+class PrunningPlayer:
+
+	def __init__(self, numLookAheads, keeps, evaluator):
+		self.numLookAheads = numLookAheads
+		self.evaluator = evaluator
+		self.keeps = keeps
+
+	def requestMove(self, game, nextColor):
+		games = self.generateGames(game, nextColor)
+		for t in range(self.numLookAheads):
+			games = self.branchGames(games)
+			games = self.pruneGames(games)
+			if self.allSameMove(games):
+				break
+		game = self.findMaximumGame(games)
+		return game[0][0]
+
+	def findMaximumGame(self, games):
+		maxGame = None
+		maxScore = -float('inf')
+		assert len(games) > 0
+		for game in games:
+			if game[2] > maxScore:
+				maxGame = game
+		return maxGame
+
+	def generateGames(self, game, nextColor):
+		moves = ["Left", "Right", "Up", "Down"]
+		games = []
+		for move in moves:
+			if self.canMove(game, move):
+				simgame = Board(game.rows, game.cols, self)
+				simgame.board = copy.deepcopy(game.board)
+				simgame.executeMove(move)
+				simgame.insertNewElement(move, nextColor)
+				score = self.evaluator.evalBoard(simgame)
+				games.append([[move], simgame, score])
+		return games
+
+	def allSameMove(self, games):
+		if len(games) == 0:
+			return True
+		firstGameMove = games[0][0][0]
+		for game in games:
+			firstMove = game[0][0]
+			if firstMove != firstGameMove:
+				return False
+		return True
+
+	def pruneGames(self, games):
+		newgames = []
+		assert len(games) > 0
+		for i in range(self.keeps):
+			if len(games) == 0:
+				break
+			maxScore = -float('inf')
+			maxGame = None
+			for game in games:
+				if game[2] > maxScore:
+					maxGame = game
+			newgames.append(maxGame)
+			games.remove(maxGame)
+		return newgames
+
+	def branchGames(self, games):
+		newgames = []
+		moves = ["Left", "Right", "Up", "Down"]
+		for move in moves:
+			for game in games:
+				if self.canMove(game[1], move):
+					simgame = Board(game[1].rows, game[1].cols, self)
+					simgame.board = copy.deepcopy(game[1].board)
+					simgame.executeMove(move)
+					nextColor = random.randint(1,3)
+					simgame.insertNewElement(move, nextColor)
+					score = self.evaluator.evalBoard(simgame)
+					game[0].append(move)
+					newgames.append([game[0], simgame, score])
+				else:
+					newgames.append(game)
+		return newgames
 
 	def canMove(self, game, move):
 		simgame = Board(game.rows, game.cols, self)
@@ -609,35 +704,45 @@ class CombinedEvaluators:
 class StrategyTester:
 
 	@staticmethod
-	def testEvaluators(listOfEvaluators, numLookAheads, numGames):
+	def testEvaluators(listOfEvaluators, numLookAheads, numGames, numberOfKeepsForPrunning):
 		print "Testing Evaluators..."
 		print "Number of Look Aheads: %d" % numLookAheads
 		print "Number of Games: %d" % numGames
 		for k, evaluator in enumerate(listOfEvaluators):
 			print "Testing Evaluator %d: %s" % (k, str(evaluator))
-			player = Player(numLookAheads, evaluator)
+			player = PrunningPlayer(numLookAheads, numberOfKeepsForPrunning, evaluator)
 			game = Board(4,4,player)
-			totalScore = 0
-			maxScore = 0
-			minScore = float('inf')
+			scores = []
 			for i in range(numGames):
 				score = game.play()[1]
+				scores.append(score)
 				game.reset()
-				totalScore += score
-				if score > maxScore:
-					maxScore = score
-				if score < minScore:
-					minScore = score
-			print "Average Score: %d" % (totalScore / numGames)
-			print "Max Score: %d" % maxScore
-			print "Min Score: %d" % minScore
+			print "Average Score: %d" % (sum(scores) / numGames)
+			print "Median Score: %d" % numpy.median(numpy.array(scores))
+			print "Max Score: %d" % max(scores)
+			print "Min Score: %d" % min(scores)
+			print "Standard Deviation: %d" % numpy.std(scores)
+			#StrategyTester.plotScores(scores)
+		#pyplot.show()
+
+	@staticmethod
+	def plotScores(scores):
+		pyplot.figure()
+		hist, bins = numpy.histogram(scores, bins=50)
+		width = 0.7 * (bins[1] - bins[0])
+		center = (bins[:-1] + bins[1:]) / 2
+		pyplot.bar(center, hist, align='center', width=width)
 
 class GeneticAlgorithm:
+
+	CURRENT_BEST_GA_COEFFICIENTS = [0.12027059607492636, 0.1471465166193795, 0.07977407750482718, 0.11899206288905258, 0.12155425087545638, 0.10730058812753732, 0.09320185892593419, 0.07302076375403793, 0.13873928522884846]
+	CURRENT_BEST_GA_EVALUATORS = [MaximizeScore(), SumOfSquares(), SumOfCubes(), Gravity(), SumOfBottom(), EmptySquares(), MinOneTwo(), PositionOfHighest(), ClosenessOfValues()]
 
 	def __init__(self, numOfGames, numLookAheads, branchingFactor, numOfKeeps):
 		self.numOfGames = numOfGames
 		self.numLookAheads = numLookAheads
-		self.currentBest = [CombinedEvaluators.generateRandom() for i in range(numOfKeeps)]
+		listOfCoefficients = numpy.eye(len(GeneticAlgorithm.CURRENT_BEST_GA_EVALUATORS)).tolist()
+		self.currentBest = [CombinedEvaluators(GeneticAlgorithm.CURRENT_BEST_GA_EVALUATORS, coef) for coef in listOfCoefficients]
 		self.currentCost = []
 		self.branchingFactor = branchingFactor
 		self.numOfKeeps = numOfKeeps
@@ -645,18 +750,12 @@ class GeneticAlgorithm:
 	def cost(self, evaluator):
 		player = Player(self.numLookAheads, evaluator)
 		game = Board(4,4,player)
-		totalScore = 0
-		maxScore = 0
-		minScore = float('inf')
+		scores = []
 		for i in range(self.numOfGames):
 			score = game.play()[1]
-			if score > maxScore:
-				maxScore = score
-			if score < minScore:
-				minScore = score
-			totalScore += game.play()[1]
+			scores.append(score)
 			game.reset()
-		return -totalScore / self.numOfGames - maxScore - minScore
+		return - numpy.median(numpy.array(scores))
 
 	def mutate(self, evaluator):
 		newevaluators = [evaluator]
@@ -713,5 +812,22 @@ class GeneticAlgorithm:
 test = BoardTests()
 test.runAllTests()
 
-ga = GeneticAlgorithm(10, 2, 5, 5)
-ga.runForeverWithUpdates()
+evalsToTest = [MaximizeScore()]
+start = time.time()
+StrategyTester.testEvaluators(evalsToTest, 10, 10, 5)
+end = time.time()
+print "Time Elapsed: " 
+print end - start
+
+print "Random Player"
+rand = RandomPlayer()
+game = Board(4,4, rand)
+scores = []
+for i in range(10):
+	scores.append(game.play()[1])
+	game.reset()
+print 
+
+
+#ga = GeneticAlgorithm(10, 2, 4, 5)
+#ga.runForeverWithUpdates()

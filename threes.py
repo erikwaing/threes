@@ -504,6 +504,7 @@ class PrunningPlayer:
 		self.keeps = keeps
 
 	def requestMove(self, game, nextColor):
+		#game.drawBoard()
 		games = self.generateGames(game, nextColor)
 		for t in range(self.numLookAheads):
 			games = self.branchGames(games)
@@ -511,6 +512,10 @@ class PrunningPlayer:
 			if self.allSameMove(games):
 				break
 		game = self.findMaximumGame(games)
+		#print "Next Move: ", game[0][0]
+		#for i in games:
+		#	print i
+		#raw_input('Press enter to continue')
 		return game[0][0]
 
 	def findMaximumGame(self, games):
@@ -520,6 +525,7 @@ class PrunningPlayer:
 		for game in games:
 			if game[2] > maxScore:
 				maxGame = game
+				maxScore = game[2]
 		return maxGame
 
 	def generateGames(self, game, nextColor):
@@ -591,13 +597,16 @@ class PrunningPlayer:
 class StrategyTester:
 
 	@staticmethod
-	def testEvaluators(listOfEvaluators, numLookAheads, numGames, numberOfKeepsForPrunning):
+	def testEvaluators(listOfEvaluators, numLookAheads, numGames, numberOfKeepsForPrunning, playerName='PrunningPlayer'):
 		print "Testing Evaluators..."
 		print "Number of Look Aheads: %d" % numLookAheads
 		print "Number of Games: %d" % numGames
 		for k, evaluator in enumerate(listOfEvaluators):
 			print "Testing Evaluator %d: %s" % (k, str(evaluator))
-			player = PrunningPlayer(numLookAheads, numberOfKeepsForPrunning, evaluator)
+			if playerName == 'PrunningPlayer':
+				player = PrunningPlayer(numLookAheads, numberOfKeepsForPrunning, evaluator)
+			else:
+				player = Player(numLookAheads, evaluator)
 			game = Board(4,4,player)
 			scores = []
 			for i in range(numGames):
@@ -699,9 +708,9 @@ class GeneticAlgorithm:
 test = BoardTests()
 test.runAllTests()
 
-evalsToTest = [MaximizeScore()]
+evalsToTest = [EmptySquares()]
 start = time.time()
-StrategyTester.testEvaluators(evalsToTest, 10, 10, 5)
+StrategyTester.testEvaluators(evalsToTest, 10, 100, 5)
 end = time.time()
 print "Time Elapsed: " 
 print end - start
@@ -710,10 +719,10 @@ print "Random Player"
 rand = RandomPlayer()
 game = Board(4,4, rand)
 scores = []
-for i in range(10):
+for i in range(100):
 	scores.append(game.play()[1])
 	game.reset()
-print 
+print numpy.mean(scores)
 
 
 #ga = GeneticAlgorithm(10, 2, 4, 5)

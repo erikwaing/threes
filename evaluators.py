@@ -1,4 +1,3 @@
-from threes import Board
 
 class SumOfSquares:
 

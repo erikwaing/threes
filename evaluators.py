@@ -79,22 +79,6 @@ class PositionOfHighest:
 				maxLoc = key
 		return valuesToSum[maxLoc]
 
-class ClosenessOfValues:
-
-	def evalBoard(self, Board):
-		score = 0
-		directions = [(1, 0), (0, 1)]
-		for pos in Board.board.keys():
-			(x, y) = pos
-			closestValue = float('inf')
-			for d in directions:
-				(a, b) = (x + d[0], y + d[1])
-				if (a,b) in Board.board.keys() and Board.board[(a,b)]*Board.board[(x,y)] != 0:
-					difference = abs(Board.board[(a,b)] - Board.board[(x,y)])
-					if difference < closestValue:
-						closestValue = difference
-			score -= closestValue
-		return score
 
 class CombinedEvaluators:
 	
@@ -108,7 +92,7 @@ class CombinedEvaluators:
 
 	@staticmethod
 	def generateRandom():
-		evaluators = [MaximizeScore(), SumOfSquares(), SumOfCubes(), Gravity(), SumOfBottom(), EmptySquares(), MinOneTwo(), PositionOfHighest(), ClosenessOfValues()]
+		evaluators = [MaximizeScore(), SumOfSquares(), SumOfCubes(), Gravity(), SumOfBottom(), EmptySquares(), MinOneTwo(), PositionOfHighest()]
 		coef = [random.random() for i in evaluators]
 		total = sum(coef)
 		coef = [value / total for value in coef]

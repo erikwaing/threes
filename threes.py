@@ -15,6 +15,7 @@ class Board:
 		self.board = {}
 		self.reset()
 		self.player = player
+		self.moveNumber = 0
 
 	def reset(self):
 		for i in range(self.rows):
@@ -185,12 +186,13 @@ class Board:
 		elif MoveMade == 'Left' or MoveMade == 'Right':
 			openSpaces = self.getAvailableSpacesForNextTileOnSide(MoveMade)
 		if len(openSpaces) >= 1:
-			choice = random.randint(0, len(openSpaces)-1)
+			choice = 0 #random.randint(0, len(openSpaces)-1)
 			square = openSpaces[choice]
 			self.insertTile(square, nextColor)
 		
 	def move(self):
-		nextColor = random.randint(1, 3)
+		nextColor = self.moveNumber % 3 + 1 #random.randint(1, 3)
+		self.moveNumber += 1
 		self.askPlayerForMove(nextColor)
 
 	def play(self):
@@ -534,8 +536,10 @@ class PrunningPlayer:
 		for move in moves:
 			if self.canMove(game, move):
 				simgame = Board(game.rows, game.cols, self)
+				simgame.moveNumber = game.moveNumber
 				simgame.board = copy.deepcopy(game.board)
 				simgame.executeMove(move)
+				simgame.moveNumber += 1
 				simgame.insertNewElement(move, nextColor)
 				score = self.evaluator.evalBoard(simgame)
 				games.append([[move], simgame, score])
@@ -563,7 +567,8 @@ class PrunningPlayer:
 				if game[2] > maxScore:
 					maxGame = game
 			newgames.append(maxGame)
-			games.remove(maxGame)
+			if maxGame in games:
+				games.remove(maxGame)
 		return newgames
 
 	def branchGames(self, games):
@@ -573,9 +578,11 @@ class PrunningPlayer:
 			for game in games:
 				if self.canMove(game[1], move):
 					simgame = Board(game[1].rows, game[1].cols, self)
+					simgame.moveNumber = game[1].moveNumber
 					simgame.board = copy.deepcopy(game[1].board)
 					simgame.executeMove(move)
-					nextColor = random.randint(1,3)
+					simgame.moveNumber += 1
+					nextColor = simgame.moveNumber % 3 + 1 #random.randint(1,3)
 					simgame.insertNewElement(move, nextColor)
 					score = self.evaluator.evalBoard(simgame)
 					game[0].append(move)
@@ -631,8 +638,8 @@ class StrategyTester:
 
 class GeneticAlgorithm:
 
-	CURRENT_BEST_GA_COEFFICIENTS = [0.12027059607492636, 0.1471465166193795, 0.07977407750482718, 0.11899206288905258, 0.12155425087545638, 0.10730058812753732, 0.09320185892593419, 0.07302076375403793, 0.13873928522884846]
-	CURRENT_BEST_GA_EVALUATORS = [MaximizeScore(), SumOfSquares(), SumOfCubes(), Gravity(), SumOfBottom(), EmptySquares(), MinOneTwo(), PositionOfHighest(), ClosenessOfValues()]
+	CURRENT_BEST_GA_COEFFICIENTS = [0.12027059607492636, 0.1471465166193795, 0.07977407750482718, 0.11899206288905258, 0.12155425087545638, 0.10730058812753732, 0.09320185892593419, 0.07302076375403793]
+	CURRENT_BEST_GA_EVALUATORS = [MaximizeScore(), SumOfSquares(), SumOfCubes(), Gravity(), SumOfBottom(), EmptySquares(), MinOneTwo(), PositionOfHighest()]
 
 	def __init__(self, numOfGames, numLookAheads, branchingFactor, numOfKeeps):
 		self.numOfGames = numOfGames
@@ -708,9 +715,9 @@ class GeneticAlgorithm:
 test = BoardTests()
 test.runAllTests()
 
-evalsToTest = [EmptySquares()]
+evalsToTest = [MaximizeScore(), SumOfSquares(), SumOfCubes(), Gravity(), SumOfBottom(), EmptySquares(), MinOneTwo(), PositionOfHighest()]
 start = time.time()
-StrategyTester.testEvaluators(evalsToTest, 10, 100, 5)
+StrategyTester.testEvaluators(evalsToTest, 2, 1, 100)
 end = time.time()
 print "Time Elapsed: " 
 print end - start

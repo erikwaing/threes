@@ -450,18 +450,8 @@ class Player:
 		self.sequences = self.allSequencesOfLength(numLookAheads)
 
 	def allSequencesOfLength(self, n):
-		if n == 1:
-			return [['Left'], ['Right'], ['Up'], ['Down']]
-		else:
-			toAdd = ['Left', 'Right', 'Up', 'Down']
-			sequences = []
-			previous = self.allSequencesOfLength(n-1)
-			for next in toAdd:
-				for after in previous:
-					current = copy.deepcopy(after)
-					current.append(next)
-					sequences.append(current)
-			return sequences
+		#One line swag
+		return [list(i) for i in itertools.product(['Left','Right','Up','Down'], repeat=n)]
 
 	def requestMove(self, game, nextColor):
 		possibleMoves = ['Left', 'Right', 'Up', 'Down']
@@ -472,10 +462,18 @@ class Player:
 			tempBoard.board = copy.deepcopy(game.board)
 			for move in moves:
 				if self.canMove(tempBoard, move):
+					# Need to get all possible ways board can change, run each. 
+					# Requires copy of game for each possible variant.
+					# Then average scores over number of different paths.
+					# Branching factor here is very large.
+					# Combine with lots of deepcopy's -> bad juju.
+
 					tempBoard.executeMove(move)
 					tempBoard.insertNewElement(move, nextColor)
 					nextColor = random.randint(1,3)
 				else:
+					# With this break, may end up with some sequences 
+					# of different length being compared
 					break
 			boardScore = self.evaluator.evalBoard(tempBoard)
 			if boardScore > maxscore:

@@ -1,0 +1,137 @@
+\documentclass[11pt]{article}
+\usepackage{graphicx}    % needed for including graphics e.g. EPS, PS
+\topmargin -1.5cm        % read Lamport p.163
+\oddsidemargin -0.04cm   % read Lamport p.163
+\evensidemargin -0.04cm  % same as oddsidemargin but for left-hand pages
+\textwidth 16.59cm
+\textheight 21.94cm 
+%\pagestyle{empty}       % Uncomment if don't want page numbers
+\parskip 7.2pt           % sets spacing between paragraphs
+%\renewcommand{\baselinestretch}{1.5} % Uncomment for 1.5 spacing between lines
+\usepackage{amsmath}
+\usepackage{verbatim}
+\usepackage{amsfonts}
+\parindent 0pt		 % sets leading space for paragraphs
+\author{Erik Waingarten, Fermi Ma, Matt Susskind}
+\title{ES.S20 Final Project: \\
+Strategies for \emph{Threes!}}
+
+
+\begin{document}         
+\maketitle
+
+\section{Introduction}
+
+\emph{Threes!} is a popular puzzle phone game created by Asher Vollmer. The game is a one-player game played on a $4 \times 4$ board of squares, where each non-empty square is labeled with either a 1, 2, or a positive integer of the form $3*2^i$. The game starts out with 9 of the 16 squares non-empty, where these non-empty squares can take on the values 1, 2, or 3. On each turn, the player chooses to slide the tiles in one of the four directions (up, down, left, or right). This moves each square on the board one unit over in that direction (possibly combining it with another square), unless it is already against the edge of the board or is adjacent to a tile it cannot combine with. Two square combine by adding their values together if they are a 1 and a 2, or if they are identical. If there are more than two numbers in the same row or column that could combine on a single move, the combination occurs between the two squares that are farthest in the direction of the move. For example, if the player slides the squares left, and three 3's are adjacent, the leftmost 3's will combine into a 6. At each move, one new tile (usually a 1, 2, or 3, but sometimes a higher value) slides in. The game ends when the board is filled with non-empty squares and no further moves can be made. The game is scored when the game ends, where each tile with value $n$ that is not a 1 or 2 contributes $3^{\log_2(n/3)+1}$ to the score, the tiles with values $1$ and $2$ contribute by adding $1$ or $2$ respectively. A typical user will generally end with a score of around $1,000$, and expert players consider scores around $20,000$ to be really good.
+
+\section{Analysis}
+
+From inpection, there are a couple easy claims that we can make. For simplicity, lets assume that only $1$ and $2$'s come into the board on a given move. Then we can find a simple upper bound on the score. Since there are 16 tiles, in order to achieve $3*2^{15}$, we would need to fill the remaining 15 values with the $3*2^{14}$ and have a tile with $3*2^{14}$. So now we must need to fill in $3*2^{14}$ in 14 tiles. We can repeat this process to show that the maximum score is
+\[ 2 + \sum_{i=0}^14 3*2^{i} = 2 + 3*2^{15} = 98,306 \]
+
+% FIX THIS UP
+\begin{comment}
+The question remains of whether this score is attainable. We note that this is attainable through the following process. Suppose that the tiles entered the board in the following process:\\
+\begin{itemize}
+\item At the beginning pieces alternate between $1$ and $2$.
+\item First, pieces come in from the bottom left, and we push these to the right. 
+\begin{itemize}
+\item continue this until you are left with $2, 3, 6, 12$ in the bottom row.
+\item we can do this with every row (with last value inserted alternating between 1 and 2), and then go down, inserting alternating 1 and 2 at the top in the first column to get 
+\[ \begin{array}{cccc}
+2 & & & \\
+1 & & & \\
+2 & & & \\
+6 &12&24&48 \end{array} \]
+\end{itemize}
+\item We now go down until we fill in the whole board like
+\[ \begin{array}{cccc} 
+2 & & & \\
+3 & & & \\
+6 & & & \\
+12&24 &48&96\end{array} \]
+\item We can do a similar process in the other direction to achieve
+\[ \begin{array}{cccc}
+12&6 & 3& 2 \\
+24& & &  \\
+48& & & \\
+96 & 192 & 284& 568\end{array} \]
+\end{itemize}
+\end{comment}
+
+Another interesting question that arises in \emph{Threes!} is what does it mean to have a good board? Many times during gameplay, it seems like you are about to lose, but then in a couple of moves, everything seems to combine magically and you end up with a clearer board with high numbers. We explore this question of what it means to have a good board by running some experiments. 
+
+We came up with a list of possible heuristics of how to evaluate a board. The plan is to determine which of these heuristics a player should follow to attain a better score. We built an AI for \emph{Threes!} that can play and simulate a player that does a game tree search with prunning, evaluating the board using the different heuristics. 
+
+While the original game of \emph{Threes!} has a degree of uncertainty involved (as the sequence of tiles that will slide in is unknown), we consider a deterministic version of the game. The tiles that enter the board alternate between coming in as $1, 2,$ and $3$ and the tiles come into the first empty spot in the direction that the user moves. Also, in our version of the game, the board begins with all empty tiles.
+
+In this simpler, deterministic variant of the game, the game tree can actually be drawn out beforehand in its entirety (but is still infeasible to actually compute). Each node has a branching factor of at most four, corresponding to the four possible directions tiles can slide at each move.
+
+We considered the following evaluators:
+
+\texttt{MaximizeScore}: Evaluates a board based solely on the score that board would receive, if the game were to end at that point.
+
+\texttt{SumOfSquares}: Evaluates a board based on the sum of the squares of the numbers on the board.
+
+\texttt{SumOfCubes}: Same as \texttt{SumOfSquares}, except with cubes.
+
+\texttt{Gravity}: Evaluates the negative gravitational potential of the board. This biases the board to have the higher numbers on the bottom row.
+
+\texttt{SumOfBottom}: Evaluates a board based on the sum of the tiles on the bottom row.
+
+\texttt{EmptySquares}: Evalutes a board (inversely) based on the number of empty squares.
+
+\texttt{MinOneTwo}: Evaluates a board (inversely) based on the number of 1's and 2's present. 
+
+\texttt{PositionOfHighest}: Evaluates a board based on the position of the highest nonempty tile. This evalutes a board more highly if the higher tile is in a corner or an edge, with the idea that this should favor strategies that push higher tiles to the corners which is a common strategy used by players. 
+
+\section{Results}
+
+We obtained the following results running the evaluators on the determinist version of the game where the AI had two lookaheads.
+
+\begin{tabular}{l c c}
+\hline\hline % inserting double-line 
+Evaluator & \ Score
+\\ [0.5ex] 
+\hline % inserts single-line 
+ 
+% Entering 1st row 
+\texttt{MaximizeScore} & 9135 \\
+
+\texttt{SumOfSquares} &  22977 \\
+
+\texttt{SumOfCubes} &  22977  \\
+
+\texttt{Gravity} & 3837   \\
+
+\texttt{SumOfBottom} & 2818  \\
+
+\texttt{EmptySquares} & 23308  \\
+
+\texttt{MinOneTwo} & 2668\\
+
+\texttt{PositionOfHighest} & 580  \\
+ 
+% [1ex] adds vertical space 
+\hline % inserts single-line 
+\end{tabular}
+
+Its surprising that maximizing the score did not achieve the highest score and that sum of squares and cubes yielded higher scores. The formula for evaluating the board score always scores the tiles lower than in the sum of squares. This means that the board score underweights the benefit of combining larger values, which seem to be better for survival in this kind of game. 
+
+In the end, maximizing the number of empty squares seems to be the best for achieving high scores in this game. It makes sense that this would be a good strategy. All the other strategies did not do very well. 
+
+\section{Conclusion}
+
+The game of \emph{Threes!} is an interesting game that combines randomization, planning, and strategy. We sought to answer the question of what makes a good board. A series of experiments showed that in a deterministic variant of the game, using two look aheads, the best heuristic to use was to maximize the number of empty squares on the board. It was interesting to see that maximizing the score was not a very good strategy in this game.
+
+It would be interesting to see what would happen in the actual randomized version of the game. We believe that in the actual version of the game, the other strategies that players use become more important and can have a more profound effect on the score.
+\end{document}
+
+
+
+
+
+
+
+
+

@@ -13,21 +13,33 @@
 \usepackage{amsfonts}
 \parindent 0pt		 % sets leading space for paragraphs
 \author{Erik Waingarten, Fermi Ma, Matt Susskind}
-\title{ES.S20 Final Project: \\
+\title{ES.S20 Final Project 1: \\
 Strategies for \emph{Threes!}}
 
 
 \begin{document}         
 \maketitle
 
-\section{Introduction}
+\section{Game Description}
 
-\emph{Threes!} is a popular puzzle phone game created by Asher Vollmer. The game is a one-player game played on a $4 \times 4$ board of squares, where each non-empty square is labeled with either a 1, 2, or a positive integer of the form $3*2^i$. The game starts out with 9 of the 16 squares non-empty, where these non-empty squares can take on the values 1, 2, or 3. On each turn, the player chooses to slide the tiles in one of the four directions (up, down, left, or right). This moves each square on the board one unit over in that direction (possibly combining it with another square), unless it is already against the edge of the board or is adjacent to a tile it cannot combine with. Two square combine by adding their values together if they are a 1 and a 2, or if they are identical. If there are more than two numbers in the same row or column that could combine on a single move, the combination occurs between the two squares that are farthest in the direction of the move. For example, if the player slides the squares left, and three 3's are adjacent, the leftmost 3's will combine into a 6. At each move, one new tile (usually a 1, 2, or 3, but sometimes a higher value) slides in. The game ends when the board is filled with non-empty squares and no further moves can be made. The game is scored when the game ends, where each tile with value $n$ that is not a 1 or 2 contributes $3^{\log_2(n/3)+1}$ to the score, the tiles with values $1$ and $2$ contribute by adding $1$ or $2$ respectively. A typical user will generally end with a score of around $1,000$, and expert players consider scores around $20,000$ to be really good.
+\emph{Threes!} is a popular puzzle phone game created by Asher Vollmer. The game is a one-player game played on a $4 \times 4$ board of squares, where each non-empty square is labeled with either a 1, 2, or a positive integer of the form $3*2^i$.
+
+The game starts out with 9 of the 16 squares non-empty, where these non-empty squares can take on the values 1, 2, or 3. On each turn, the player chooses to slide the tiles in one of the four directions (up, down, left, or right). This moves each square on the board one unit over in that direction (possibly combining it with another square), unless it is already against the edge of the board or is adjacent to a tile it cannot combine with.
+
+Two square combine by adding their values together if they are a 1 and a 2, or if they are identical. If there are more than two numbers in the same row or column that could combine on a single move, the combination occurs between the two squares that are farthest in the direction of the move. For example, if the player slides the squares left, and three 3's are adjacent, the leftmost 3's will combine into a 6. At each move, one new tile (usually a 1, 2, or 3, but sometimes a higher value) slides in.
+
+The game ends when the board is filled with non-empty squares and no further moves can be made. The game is scored when the game ends, where each tile with value $n$ that is not a 1 or 2 contributes $3^{\log_2(n/3)+1}$ to the score, the tiles with values $1$ and $2$ contribute by adding $1$ or $2$ respectively.
+
+Typical new players generally end with a score around $1,000$, while experienced players often score between 20,000 and 70,000 points.
 
 \section{Analysis}
 
-From inpection, there are a couple easy claims that we can make. For simplicity, lets assume that only $1$ and $2$'s come into the board on a given move. Then we can find a simple upper bound on the score. Since there are 16 tiles, in order to achieve $3*2^{15}$, we would need to fill the remaining 15 values with the $3*2^{14}$ and have a tile with $3*2^{14}$. So now we must need to fill in $3*2^{14}$ in 14 tiles. We can repeat this process to show that the maximum score is
+\subsection{Maximum Score}
+
+The first question we wanted to explore was the idea of a maximum possible score. In theory, one certainly does exist; with an induction-type argument, we can argue that the highest possible tile is $3*2^{15}$. To see why, note that achieving $3*2^{15}$ first requires filling the board of 16 tiles with two $3*2^{14}$ tiles. Consider the second such tile, and note achieving $3*2^{14}$ first requires filling the remaining 15 tiles with two $3*2^{13}$ tiles. We can repeat this process to show that the maximum score is
 \[ 2 + \sum_{i=0}^14 3*2^{i} = 2 + 3*2^{15} = 98,306 \]
+
+We were unable to determine if there actually exists a sequence of input tiles that allows the player to achieve this maximum score. However, it can certainly be done if the board is modified to be a line of 16 tiles and the inputs always come in from the same spot and alternate between 1's and 2's. In real gameplay, the randomness of the input values and input location makes achieving anyting close to this upper bound nearly impossible.
 
 % FIX THIS UP
 \begin{comment}
@@ -59,9 +71,11 @@ The question remains of whether this score is attainable. We note that this is a
 \end{itemize}
 \end{comment}
 
-Another interesting question that arises in \emph{Threes!} is what does it mean to have a good board? Many times during gameplay, it seems like you are about to lose, but then in a couple of moves, everything seems to combine magically and you end up with a clearer board with high numbers. We explore this question of what it means to have a good board by running some experiments. 
+\subsection{What Makes a Good Board?}
 
-We came up with a list of possible heuristics of how to evaluate a board. The plan is to determine which of these heuristics a player should follow to attain a better score. We built an AI for \emph{Threes!} that can play and simulate a player that does a game tree search with prunning, evaluating the board using the different heuristics. 
+Another interesting question that arises in \emph{Threes!} is: What does it mean to have a good board? Many times during real gameplay, boards that look like losing boards / bad situations can turn into very good situations in a surprisingly small number of moves. We explore this question of what it means to have a good board by running some experiments. 
+
+We came up with a list of possible heuristics of how to evaluate a board. The plan is to determine which of these heuristics a player should follow to attain a better score. We built an AI for \emph{Threes!} that can play and simulate a player that does a game tree search with pruning, evaluating the board using the different heuristics. 
 
 While the original game of \emph{Threes!} has a degree of uncertainty involved (as the sequence of tiles that will slide in is unknown), we consider a deterministic version of the game. The tiles that enter the board alternate between coming in as $1, 2,$ and $3$ and the tiles come into the first empty spot in the direction that the user moves. Also, in our version of the game, the board begins with all empty tiles.
 
@@ -116,7 +130,7 @@ Evaluator & \ Score
 \hline % inserts single-line 
 \end{tabular}
 
-Its surprising that maximizing the score did not achieve the highest score and that sum of squares and cubes yielded higher scores. The formula for evaluating the board score always scores the tiles lower than in the sum of squares. This means that the board score underweights the benefit of combining larger values, which seem to be better for survival in this kind of game. 
+It is surprising that maximizing the score did not achieve the highest score and that sum of squares and cubes yielded higher scores. The formula for evaluating the board score always scores the tiles lower than in the sum of squares. This means that the board score underweights the benefit of combining larger values, which seem to be better for survival in this kind of game. 
 
 In the end, maximizing the number of empty squares seems to be the best for achieving high scores in this game. It makes sense that this would be a good strategy. All the other strategies did not do very well. 
 

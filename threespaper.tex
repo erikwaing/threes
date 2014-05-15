@@ -32,12 +32,18 @@ The game ends when the board is filled with non-empty squares and no further mov
 
 Typical new players generally end with a score around $1,000$, while experienced players often score between 20,000 and 70,000 points.
 
+\section{Real Gameplay}
+
+In standard \emph{Threes!} gameplay, a well-known strategy is known as the ``corner strategy". The corner strategy essentially tells the player to build up the largest tile so that it stays in one corner of the board, and to never move this tile out of the corner unless the player is stuck otherwise. The general reasoning behind the strategy is that the largest tiles on the board can't combine with other tiles, and so they simply take up space and impede the process of combining squares. Thus, it seems optimal to keep the largest tile in a corner, where it is only adjacent to two other squares (rather than three or four).
+
+We believe that the best algorithm to play \emph{Threes!} won't follow a corner strategy exactly, but the strategy gives us a good idea of what sort of heuristics we should pay attention to.
+
 \section{Analysis}
 
 \subsection{Maximum Score}
 
 The first question we wanted to explore was the idea of a maximum possible score. In theory, one certainly does exist; with an induction-type argument, we can argue that the highest possible tile is $3*2^{15}$. To see why, note that achieving $3*2^{15}$ first requires filling the board of 16 tiles with two $3*2^{14}$ tiles. Consider the second such tile, and note achieving $3*2^{14}$ first requires filling the remaining 15 tiles with two $3*2^{13}$ tiles. We can repeat this process to show that the maximum score is
-\[ 2 + \sum_{i=0}^14 3*2^{i} = 2 + 3*2^{15} = 98,306 \]
+\[ 2 + \sum_{i=0}^{14} 3^{i+1} = 2 + (3^{15}-1)/2 = 7174455 \]
 
 We were unable to determine if there actually exists a sequence of input tiles that allows the player to achieve this maximum score. However, it can certainly be done if the board is modified to be a line of 16 tiles and the inputs always come in from the same spot and alternate between 1's and 2's. In real gameplay, the randomness of the input values and input location makes achieving anyting close to this upper bound nearly impossible.
 
